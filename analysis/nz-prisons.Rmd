@@ -1,0 +1,93 @@
+---
+title: "Modelling the annual sentenced prisoner population"
+subtitle: "`r format(Sys.time(), '%d %B, %Y')`"
+author: "Caleb Moses"
+documentclass: dragonfly-proposal
+# bibliography: ../deepspeech.bib
+# selfcitation: ../deepspeech-self.bib
+clean: False
+header-includes:
+  - \usepackage{draftwatermark}
+output:
+  bookdown::pdf_document2:
+    toc: false
+    latex_engine: xelatex
+    fig_width: 5
+    fig_height: 3
+    fig_caption: true
+    template: template.tex
+    keep_tex: true
+---
+
+```{r setup-knitr, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = 'center'
+  )
+```
+
+```{r setup}
+
+library(tidyverse)
+library(furrr)
+library(rstan)
+library(tidybayes)
+library(brms)
+library(here)
+
+# Set multicore
+options(mc.cores = min(parallel::detectCores() - 1, 10))
+plan(multiprocess)
+
+# Set default ggplot theme
+theme_set(theme_minimal())
+
+# Avoid recompilation of unchanged models
+rstan_options(auto_write = TRUE)
+
+```
+
+# Load the data
+
+First we load the data.
+
+```{r load-data}
+
+prison_pop <- read_csv(here('data/annual-sentenced-prisoner-population.csv')) %>%
+    select(-Flags) %>%
+    mutate(Year = as.integer(str_extract(Year, "[0-9]+$")),
+           Value = as.integer(Value)) %>%
+    complete(Sex, Age, Ethnicity, Offence, Duration, Year, fill = list(Value = 0)) %>%
+    filter(Year == 2018) %>%
+    mutate_if(is.character, function(x) factor(x, levels = unique(x)))
+
+prison_pop
+
+prison_pop %>%
+    filter(Sex == "Total Sex") %>%
+    complete(Age, Ethnicity, Offence, Duration, Year, fill = list(Value = 0))
+
+prison_pop %>%
+    group_by(Duration) %>%
+    summarise(Count = sum(Value)) %>%
+    ggplot(aes(x = Duration, y = Count)) +
+    geom_bar(stat = 'identity')
+
+```
+
+```{r}
+
+prison_pop_composed <- compose_data(prison_pop)
+
+# Prior simulation
+prison_pop_prior <- stan(
+    file = here("analysis/prison_prior.stan"),
+    data = prison_pop_composed,
+    iter = 1,
+    chains = 1,
+    algorithm = "Fixed_param"
+)
+
+```
