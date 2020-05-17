@@ -55,31 +55,17 @@ First we load the data.
 
 ```{r load-data}
 
-prison_pop <- read_csv(here('data/annual-sentenced-prisoner-population.csv')) %>%
-    select(-Flags) %>%
-    mutate(Year = as.integer(str_extract(Year, "[0-9]+$")),
-           Value = as.integer(Value)) %>%
-    complete(Sex, Age, Ethnicity, Offence, Duration, Year, fill = list(Value = 0)) %>%
-    filter(Year == 2018) %>%
-    mutate_if(is.character, function(x) factor(x, levels = unique(x)))
+prison_pop <- read_csv(here('data/prison_pop_tidy.csv')) %>%
+    mutate_if(is.character, factor) %>%
+    mutate_if(is.numeric, as.integer)
 
 prison_pop
-
-prison_pop %>%
-    filter(Sex == "Total Sex") %>%
-    complete(Age, Ethnicity, Offence, Duration, Year, fill = list(Value = 0))
-
-prison_pop %>%
-    group_by(Duration) %>%
-    summarise(Count = sum(Value)) %>%
-    ggplot(aes(x = Duration, y = Count)) +
-    geom_bar(stat = 'identity')
 
 ```
 
 ```{r}
 
-prison_pop_composed <- compose_data(prison_pop)
+prison_pop_composed <- compose_data(prison_pop_tidy)
 
 # Prior simulation
 prison_pop_prior <- stan(
