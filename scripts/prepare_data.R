@@ -1,3 +1,5 @@
+library(tidyverse)
+library(here)
 
 prison_pop <- read_csv(here('data/annual-sentenced-prisoner-population.csv')) %>%
     select(-Flags) %>%
