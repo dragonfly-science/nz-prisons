@@ -7,6 +7,16 @@ GID ?= $(shell id -g)
 DOCKER_ARGS ?= 
 GIT_TAG ?= $(shell git log --oneline | head -n1 | awk '{print $$1}')
 
+.PHONY: data docker docker-push docker-pull enter enter-root
+
+data: data/prison_pop_tidy.csv
+
+data/prison_pop_tidy.csv: scripts/prepare_data.R data/annual-sentenced-prisoner-population.csv
+	$(RUN) Rscript $<
+
+data/annual-sentenced-prisoner-population.csv: data/annual-sentenced-prisoner-population.zip
+	unzip $< -d $(dir $@)
+
 notebooks: $(shell ls -d analysis/*.Rmd | sed 's/.Rmd/.pdf/g')
 
 analysis/%.pdf: analysis/%.Rmd
@@ -15,6 +25,9 @@ analysis/%.pdf: analysis/%.Rmd
 daemon: DOCKER_ARGS= -dit --rm -e DISPLAY=$$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --name="rdev"
 daemon:
 	$(RUN) R
+
+clean:
+	rm -f data/*.csv
 
 .PHONY: docker
 docker:
@@ -42,14 +55,3 @@ enter-root: UID=root
 enter-root: GID=root
 enter-root:
 	$(RUN) bash
-
-.PHONY: inspect-variables
-inspect-variables:
-	@echo DOCKER_REGISTRY: $(DOCKER_REGISTRY)
-	@echo IMAGE_NAME:      $(IMAGE_NAME)
-	@echo IMAGE:           $(IMAGE)
-	@echo RUN:             $(RUN)
-	@echo UID:             $(UID)
-	@echo GID:             $(GID)
-	@echo DOCKER_ARGS:     $(DOCKER_ARGS)
-	@echo GIT_TAG:         $(GIT_TAG)
