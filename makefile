@@ -19,7 +19,7 @@ data/annual-sentenced-prisoner-population.csv: data/annual-sentenced-prisoner-po
 
 notebooks: $(shell ls -d analysis/*.Rmd | sed 's/.Rmd/.pdf/g')
 
-analysis/%.pdf: analysis/%.Rmd
+analysis/%.pdf: analysis/%.Rmd data/prison_pop_tidy.csv
 	$(RUN) Rscript -e 'rmarkdown::render("$<")'
 
 daemon: DOCKER_ARGS= -dit --rm -e DISPLAY=$$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --name="rdev"

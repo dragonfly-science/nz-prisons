@@ -55,25 +55,107 @@ First we load the data.
 
 ```{r load-data}
 
-prison_pop <- read_csv(here('data/prison_pop_tidy.csv')) %>%
-    mutate_if(is.character, factor) %>%
-    mutate_if(is.numeric, as.integer)
+duration_levels <- c(
+    "Preventive detention",
+    "6 months or less",
+    "Over 6 months and up to 1 year",
+    "Over 1 year and up to 2 years",
+    "Over 2 years and up to 3 years",
+    "Over 3 years and up to 5 years",
+    "5 years or more",
+    "Life imprisonment")
 
-prison_pop
+prison_pop <- read_csv(here('data/prison_pop_tidy.csv')) %>%
+    filter_if(is.character, all_vars(!str_detect(., "Unknown"))) %>%
+    mutate_if(is.character, factor) %>%
+    mutate_if(is.numeric, as.integer) %>%
+    mutate(Age = as.ordered(Age),
+           Duration = ordered(Duration, levels = duration_levels))
+
+prison_pop %>%
+    group_by(Ethnicity, Duration) %>%
+    summarise(Count = sum(Count)) %>%
+    ggplot(aes(x = Duration, y = Count, fill = Duration)) +
+    geom_bar(stat = 'identity') +
+    facet_wrap(~Ethnicity)
 
 ```
 
 ```{r}
 
-prison_pop_composed <- compose_data(prison_pop_tidy)
+bform <- bf(Count ~ Sex + Age + Ethnicity + Offence + Duration, decomp = 'QR')
 
-# Prior simulation
-prison_pop_prior <- stan(
-    file = here("analysis/prison_prior.stan"),
-    data = prison_pop_composed,
-    iter = 1,
-    chains = 1,
-    algorithm = "Fixed_param"
+stancode <- make_stancode(
+    bform,
+    data = prison_pop,
+    family = zero_inflated_poisson(),
+    save_model = here('analysis/brms_poisson.stan'))
+
+standata <- make_standata(
+    bform,
+    data = prison_pop,
+    family = zero_inflated_poisson())
+
+fit <- stan(
+    file = here("analysis/brms_poisson_with_random_rounding.stan"),
+    data = standata,
+    iter = 2000,
+    chains = 4
+)
+
+# feed the Stan model back into brms
+brms_fit <- brm(bform, data = prison_pop, empty = TRUE)
+brms_fit$fit <- fit
+brms_fit <- rename_pars(brms_fit)
+
+conditional_effects(brms_fit)
+
+post <- posterior_samples(brms_fit)
+
+prison_pop
+
+post %>%
+    select(starts_with("b_")) %>%
+    as_tibble()
+
+```
+
+```{r}
+
+zero_inflated_poisson_rr3 <- custom_family(
+    "zero_inflated_poisson_rr3", dpars = c("mu", "zi"),
+    links = c("logit", "log"), lb = c(NA, 0),
+    type = "int"
+)
+
+stan_funs <- "
+  real zero_inflated_poisson_rr3_lpmf(int y, real eta, real zi) {
+    real lambda = 1. * (y % 3) / 3;
+    if (y == 0) {
+      return log_sum_exp(bernoulli_lpmf(1 | zi),
+                         bernoulli_lpmf(0 | zi) +
+                         poisson_log_lpmf(0 | eta)) +
+             y * bernoulli_lpmf(1 | 1);
+    } else if (y % 3 == 0) {
+      return bernoulli_lpmf(0 | zi) +
+             poisson_log_lpmf(y | eta) +
+             y * bernoulli_lpmf(1 | 1);
+    } else {
+      return bernoulli_lpmf(0 | zi) +
+             poisson_log_lpmf(y | eta) +
+             (y - (y % 3) + 3) * bernoulli_lpmf(1 | lambda) +
+             y - (y % 3) * bernoulli_lpmf(0 | lambda);
+    }
+  }
+"
+
+stanvars <- stanvar(scode = stan_funs, block = "functions")
+
+bform <- bf(Count ~ Sex + Age + Ethnicity + Offence + Duration, decomp = 'QR')
+
+brms_fit <- brm(
+    bform, data = prison_pop,
+    family = zero_inflated_poisson_rr3, stanvars = stanvars
 )
 
 ```
