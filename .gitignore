@@ -134,7 +134,15 @@ dmypy.json
 data/
 analysis/*.pdf
 analysis/*.tex
-analysis/*.tex
+analysis/*.aux
+analysis/*.bcf
+analysis/*.knit.md
+analysis/*.out
+analysis/*.run.xml
+analysis/*.utf8.md
 analysis/*.rds
 analysis/*.bib
 analysis/*_files
+
+models/*.rds
+resources/
