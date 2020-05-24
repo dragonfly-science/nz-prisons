@@ -7,7 +7,6 @@ prison_pop <- read_csv(here('data/annual-sentenced-prisoner-population.csv')) %>
            Value = as.integer(Value)) %>%
     rename(Count = Value) %>%
     complete(Sex, Age, Ethnicity, Offence, Duration, Year, fill = list(Count = 0)) %>%
-    filter(Year == 2018) %>%
     mutate_if(is.character, function(x) factor(x, levels = unique(x)))
 
 prison_pop_totals <- prison_pop %>%
