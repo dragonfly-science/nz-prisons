@@ -3,11 +3,12 @@ functions {
 
 real random_rounding_lpmf(int y, int base) {
   real lambda = 1. * (y % base) / base;
+  int y_down = y - (y % base);
   if (y % base == 0) {
     return y * bernoulli_lpmf(1 | 1);
   } else {
-    return (y - (y % base) + base) * bernoulli_lpmf(1 | lambda) +
-      y - (y % base) * bernoulli_lpmf(0 | lambda);
+    return (y_down + base) * bernoulli_lpmf(1 | lambda) +
+      y_down * bernoulli_lpmf(0 | lambda);
   }
 }
 real zero_inflated_poisson_log_lpmf(int y, real eta, real zi) {
@@ -20,8 +21,8 @@ real zero_inflated_poisson_log_lpmf(int y, real eta, real zi) {
            poisson_log_lpmf(y | eta);
   }
 }
-real zero_inflated_poisson_rr3_lpmf(int y, real mu, real zi) {
-  return zero_inflated_poisson_log_lpmf(y | mu, zi) +
+real zero_inflated_poisson_rr3_lpmf(int y, real eta, real zi) {
+  return zero_inflated_poisson_log_lpmf(y | eta, zi) +
          random_rounding_lpmf(y | 3);
 }
 
@@ -60,8 +61,12 @@ transformed parameters {
 model {
   // initialize linear predictor term
   vector[N] mu = Intercept + XQ * bQ;
+  for (n in 1:N) {
+    // apply the inverse link function
+    mu[n] = exp(mu[n]);
+  }
   // priors including all constants
-  target += student_t_lpdf(Intercept | 3, 0, 2.5);
+  target += student_t_lpdf(Intercept | 3, -2.3, 2.5);
   target += beta_lpdf(zi | 1, 1);
   // likelihood including all constants
   if (!prior_only) {
