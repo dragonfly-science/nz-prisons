@@ -6,8 +6,6 @@ documentclass: dragonfly-proposal
 # bibliography: ../deepspeech.bib
 # selfcitation: ../deepspeech-self.bib
 clean: False
-header-includes:
-  - \usepackage{draftwatermark}
 output:
   bookdown::pdf_document2:
     toc: false
@@ -21,24 +19,30 @@ output:
 
 ```{r setup-knitr, include=FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE,
+  echo = FALSE,
   message = FALSE,
   warning = FALSE,
-  fig.align = 'center'
+  fig.align = 'center',
+  fig.width = 5
   )
 ```
 
 ```{r setup}
-
 library(tidyverse)
+library(tidybayes)
+library(rethinking)
+library(kableExtra)
+library(knitr)
 library(furrr)
 library(rstan)
-library(tidybayes)
 library(brms)
 library(here)
+library(gt)
 
 # Set multicore
-options(mc.cores = min(parallel::detectCores() - 1, 10))
+options(mc.cores = min(parallel::detectCores() - 1, 10),
+        future = TRUE)
+
 plan(multiprocess)
 
 # Set default ggplot theme
@@ -47,13 +51,26 @@ theme_set(theme_minimal())
 # Avoid recompilation of unchanged models
 rstan_options(auto_write = TRUE)
 
+source(here('scripts/zero_inflated_poisson_rr3.R'), local = TRUE)
+
 ```
 
-# Load the data
-
-First we load the data.
-
 ```{r load-data}
+
+fix_factor_levels <- function(x) {
+    levels <- levels(x)
+    res = unique(as.character(levels))
+    end = c()
+    if ("Other" %in% levels) {
+        res <- res[res != "Other"]
+        end <- c("Other")
+    }
+    if ("Unknown" %in% levels) {
+        res <- res[res != "Unknown"]
+        end <- c(end, "Unknown")
+    }
+    c(res, end)
+}
 
 duration_levels <- c(
     "Preventive detention",
@@ -63,99 +80,88 @@ duration_levels <- c(
     "Over 2 years and up to 3 years",
     "Over 3 years and up to 5 years",
     "5 years or more",
-    "Life imprisonment")
+    "Life imprisonment",
+    "Unknown")
 
 prison_pop <- read_csv(here('data/prison_pop_tidy.csv')) %>%
-    filter_if(is.character, all_vars(!str_detect(., "Unknown"))) %>%
     mutate_if(is.character, factor) %>%
     mutate_if(is.numeric, as.integer) %>%
+    mutate_if(is.factor, function(x) factor(x, levels = fix_factor_levels(x))) %>%
     mutate(Age = as.ordered(Age),
            Duration = ordered(Duration, levels = duration_levels))
+
+```
+
+# Introduction
+
+I have collected the Annual Sentenced Prisoner Population for the latest Fiscal Years statistics, released annually by Stats NZ via the NZ.Stat website (http://nzdotstat.stats.govt.nz/).
+
+The data is provided as randomly rounded counts^["Privacy, security, and confidentiality of information supplied to Statistics NZ" available here: https://bit.ly/2A9O22r], and contains the following variables.
+
+- Year
+- Sex
+- Age
+- Ethnicity
+- Offence
+- Duration
+- Count
+
+A list of the possible values for each variable is provided in table \@ref(tab:varsummary).
+
+```{r varsummary}
+
+prison_vars <- c("Year", "Sex", "Age", "Ethnicity", "Offence", "Duration", "Count")
+
+prison_pop %>%
+    select(-ends_with("Total")) %>%
+    summarise_all(function(x) list(levels(x))) %>%
+    t() %>%
+    as_tibble() %>%
+    rename(Values = V1) %>%
+    mutate(Variable = prison_vars) %>%
+    unnest(cols = Values, keep_empty = TRUE) %>%
+    mutate(Variable = factor(Variable, levels = unique(Variable))) %>%
+    mutate(Values = str_wrap(Values, width = 60)) %>%
+    group_by(Variable) %>%
+    summarise(Values = paste0(Values, collapse = "\n")) %>%
+    mutate(Values = case_when(
+               Variable == "Year" ~ sprintf("%d-%d", min(prison_pop$Year), max(prison_pop$Year)),
+               Variable == "Count" ~ "Population counts, randomly rounded to base 3",
+               TRUE ~ Values)) %>%
+    mutate(Values = linebreak(Values)) %>%
+    rename(`Variable name` = Variable, `List of values` = Values) %>%
+    kable(escape = FALSE, booktabs = TRUE, linesep = "\\midrule", caption="An exhaustive list of values in the Annual Sentenced Prisoner Population dataset") %>%
+    kable_styling(font_size = 10)
+
+```
+
+# See the data
+
+```{r}
 
 prison_pop %>%
     group_by(Ethnicity, Duration) %>%
     summarise(Count = sum(Count)) %>%
+    filter(Ethnicity != "Unknown", Duration != "Unknown") %>%
     ggplot(aes(x = Duration, y = Count, fill = Duration)) +
     geom_bar(stat = 'identity') +
-    facet_wrap(~Ethnicity)
+    facet_wrap(~Ethnicity) +
+    theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
 
 ```
 
-```{r}
+# Model the data
+
+```{r zipois-model}
 
 bform <- bf(Count ~ Sex + Age + Ethnicity + Offence + Duration, decomp = 'QR')
 
-stancode <- make_stancode(
-    bform,
-    data = prison_pop,
-    family = zero_inflated_poisson(),
-    save_model = here('analysis/brms_poisson.stan'))
-
-standata <- make_standata(
-    bform,
-    data = prison_pop,
-    family = zero_inflated_poisson())
-
-fit <- stan(
-    file = here("analysis/brms_poisson_with_random_rounding.stan"),
-    data = standata,
-    iter = 2000,
-    chains = 4
-)
-
-# feed the Stan model back into brms
-brms_fit <- brm(bform, data = prison_pop, empty = TRUE)
-brms_fit$fit <- fit
-brms_fit <- rename_pars(brms_fit)
-
-conditional_effects(brms_fit)
-
-post <- posterior_samples(brms_fit)
-
-prison_pop
-
-post %>%
-    select(starts_with("b_")) %>%
-    as_tibble()
-
-```
-
-```{r}
-
-zero_inflated_poisson_rr3 <- custom_family(
-    "zero_inflated_poisson_rr3", dpars = c("mu", "zi"),
-    links = c("logit", "log"), lb = c(NA, 0),
-    type = "int"
-)
-
-stan_funs <- "
-  real zero_inflated_poisson_rr3_lpmf(int y, real eta, real zi) {
-    real lambda = 1. * (y % 3) / 3;
-    if (y == 0) {
-      return log_sum_exp(bernoulli_lpmf(1 | zi),
-                         bernoulli_lpmf(0 | zi) +
-                         poisson_log_lpmf(0 | eta)) +
-             y * bernoulli_lpmf(1 | 1);
-    } else if (y % 3 == 0) {
-      return bernoulli_lpmf(0 | zi) +
-             poisson_log_lpmf(y | eta) +
-             y * bernoulli_lpmf(1 | 1);
-    } else {
-      return bernoulli_lpmf(0 | zi) +
-             poisson_log_lpmf(y | eta) +
-             (y - (y % 3) + 3) * bernoulli_lpmf(1 | lambda) +
-             y - (y % 3) * bernoulli_lpmf(0 | lambda);
-    }
-  }
-"
-
-stanvars <- stanvar(scode = stan_funs, block = "functions")
-
-bform <- bf(Count ~ Sex + Age + Ethnicity + Offence + Duration, decomp = 'QR')
-
-brms_fit <- brm(
-    bform, data = prison_pop,
-    family = zero_inflated_poisson_rr3, stanvars = stanvars
-)
+zipois_fit <- brm(
+   bform, data = prison_pop,
+   family = zero_inflated_poisson,
+   save_model = here('models/zipois_fit.stan'),
+   file = here('models/zipois_fit.rds')
+   )
 
 ```
