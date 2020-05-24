@@ -15,11 +15,11 @@ data/prison_pop_tidy.csv: scripts/prepare_data.R data/annual-sentenced-prisoner-
 	$(RUN) Rscript $<
 
 data/annual-sentenced-prisoner-population.csv: data/annual-sentenced-prisoner-population.zip
-	unzip $< -d $(dir $@)
+	unzip -o $< -d $(dir $@) && touch $@
 
 notebooks: $(shell ls -d analysis/*.Rmd | sed 's/.Rmd/.pdf/g')
 
-analysis/%.pdf: analysis/%.Rmd data/prison_pop_tidy.csv
+analysis/%.pdf: analysis/%.Rmd
 	$(RUN) Rscript -e 'rmarkdown::render("$<")'
 
 daemon: DOCKER_ARGS= -dit --rm -e DISPLAY=$$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --name="rdev"
