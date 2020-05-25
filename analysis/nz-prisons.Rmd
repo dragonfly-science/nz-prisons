@@ -157,10 +157,11 @@ prison_pop %>%
 bform <- bf(Count ~ Sex + Age + Ethnicity + Offence + Duration, decomp = 'QR')
 
 zipois_fit <- brm(
-   bform, data = prison_pop,
-   family = zero_inflated_poisson,
-   save_model = here('models/zipois_fit.stan'),
-   file = here('models/zipois_fit.rds')
-   )
+    bform, data = prison_pop,
+    cores = 4,
+    family = zero_inflated_poisson,
+    save_model = here('models/zipois_fit.stan'),
+    file = here('models/zipois_fit.rds')
+    )
 
 ```
