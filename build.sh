@@ -2,6 +2,8 @@
 
 set -ex
 
+make data
+
 make notebooks
 
 cp analysis/*.pdf /output
