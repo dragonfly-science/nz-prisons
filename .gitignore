@@ -143,6 +143,10 @@ analysis/*.utf8.md
 analysis/*.rds
 analysis/*.bib
 analysis/*_files
+analysis/*.log
+analysis/*.lot
+analysis/*.toc
+analysis/*.lof
 
 models/*.rds
 resources/
