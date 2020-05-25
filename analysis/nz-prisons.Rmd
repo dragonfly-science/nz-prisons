@@ -40,8 +40,7 @@ library(here)
 library(gt)
 
 # Set multicore
-options(mc.cores = min(parallel::detectCores() - 1, 10),
-        future = TRUE)
+options(mc.cores = min(parallel::detectCores() - 1, 10))
 
 plan(multiprocess)
 
