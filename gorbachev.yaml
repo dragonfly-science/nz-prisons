@@ -1,4 +1,4 @@
-docker: mathematiguy/nz-prisons:094454e
+docker: mathematiguy/nz-prisons:75f92fd
 cpus: 4
 memory: 4
 publish: nz-prisons
