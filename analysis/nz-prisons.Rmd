@@ -2,18 +2,18 @@
 title: "Modelling the annual sentenced prisoner population"
 subtitle: "`r format(Sys.time(), '%d %B, %Y')`"
 author: "Caleb Moses"
-documentclass: dragonfly-proposal
+documentclass: scrartcl
 # bibliography: ../deepspeech.bib
 # selfcitation: ../deepspeech-self.bib
-clean: False
+clean: false
 output:
   bookdown::pdf_document2:
-    toc: false
-    latex_engine: xelatex
+    toc: true
+    latex_engine: pdflatex
     fig_width: 5
     fig_height: 3
     fig_caption: true
-    template: template.tex
+    template: arsclassica.tex
     keep_tex: true
 ---
 

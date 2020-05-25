@@ -1,7 +1,7 @@
 DOCKER_REGISTRY := mathematiguy
 IMAGE_NAME := $(shell basename `git rev-parse --show-toplevel` | tr '[:upper:]' '[:lower:]')
 IMAGE := $(DOCKER_REGISTRY)/$(IMAGE_NAME)
-RUN ?= docker run $(DOCKER_ARGS) --rm -v $$(pwd):/work -w /work -u $(UID):$(GID) $(IMAGE)
+RUN ?= docker run $(DOCKER_ARGS) --rm -v $$(pwd):/code -w /code -u $(UID):$(GID) $(IMAGE)
 UID ?= $(shell id -u)
 GID ?= $(shell id -g)
 DOCKER_ARGS ?= 
@@ -27,7 +27,9 @@ daemon:
 	$(RUN) R
 
 clean:
-	rm -f data/*.csv
+	rm -rf analysis/*.pdf analysis/*.aux analysis/*.bcf analysis/*.knit.md \
+	analysis/*.out analysis/*.run.xml analysis/*.utf8.md analysis/*.rds analysis/*.bib \
+	analysis/*_files analysis/*.log analysis/*.lot analysis/*.toc analysis/*.lof
 
 .PHONY: docker
 docker:

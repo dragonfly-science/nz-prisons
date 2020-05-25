@@ -1,283 +1,78 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Arsclassica Article
-% LaTeX Template
-% Version 1.1 (10/6/14)
-%
-% This template has been downloaded from:
-% http://www.LaTeXTemplates.com
-%
-% Original author:
-% Lorenzo Pantieri (http://www.lorenzopantieri.net) with extensive modifications by:
-% Vel (vel@latextemplates.com)
-%
-% License:
-% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% !TEX TS-program = pdflatex
+% !TEX root = ArsClassica.tex
 
-% Useful symbols go here
-\newcommand{\R}{\mathbb R}
-\newcommand{\Z}{\mathbb Z}
-\newcommand{\del}{\partial}
-\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+\documentclass[a4paper,twoside,openright,titlepage,
+               headinclude,,footinclude,BCOR5mm,
+               numbers=noenddot,cleardoublepage=empty,
+               tablecaptionabove]{scrreprt}
 
-\documentclass[
-10pt, % Main document font size
-a4paper, % Paper type, use 'letterpaper' for US Letter paper
-oneside, % One page layout (no page indentation)
-%twoside, % Two page layout (page indentation for binding and different headers)
-headinclude,footinclude, % Extra spacing for the header and footer
-BCOR5mm, % Binding correction
-]{scrartcl}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
-%----------------------------------------------------------------------------------------
-%	STRUCTURE
-%----------------------------------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{indentfirst}
+\usepackage[style=philosophy-modern,hyperref]{biblatex}
+\usepackage{chngpage}
+\usepackage{calc}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{lipsum}
+\usepackage{shapepar}
+\usepackage{pifont}
+\usepackage[eulerchapternumbers,subfig,beramono,eulermath,pdfspacing,listings]{classicthesis}
+\usepackage{arsclassica}
 
+%% User added
+\usepackage{makecell}
+\usepackage{pdflscape}
+\usepackage{subcaption,longtable,float}
 
-\usepackage[
-nochapters, % Turn off chapters since this is an article        
-beramono, % Use the Bera Mono font for monospaced text (\texttt)
-eulermath,% Use the Euler font for mathematics
-pdfspacing, % Makes use of pdftex’ letter spacing capabilities via the microtype package
-dottedtoc % Dotted lines leading to the page numbers in the table of contents
-]{classicthesis} % The layout is based on the Classic Thesis style
+\renewcommand{\thesection}{\arabic{section}}
 
-\usepackage{arsclassica} % Modifies the Classic Thesis package
-
-\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
-
-\usepackage[utf8]{inputenc} % Required for including letters with accents
-
-\usepackage{graphicx} % Required for including images
-\graphicspath{{Figures/}} % Set the default folder for images
-
-\usepackage{enumitem} % Required for manipulating the whitespace between and within lists
-
-\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
-
-\usepackage{subfig} % Required for creating figures with multiple parts (subfigures)
-
-\usepackage{amsmath,amssymb,amsthm} % For including math equations, theorems, symbols, etc
-
-\usepackage{varioref} % More descriptive referencing
-
-%----------------------------------------------------------------------------------------
-%	THEOREM STYLES
-%---------------------------------------------------------------------------------------
-
-\theoremstyle{definition} % Define theorem styles here based on the definition style (used for definitions and examples)
-\newtheorem{definition}{Definition}
-
-\theoremstyle{plain} % Define theorem styles here based on the plain style (used for theorems, lemmas, propositions)
-\newtheorem{theorem}{Theorem}
-
-\theoremstyle{remark} % Define theorem styles here based on the remark style (used for remarks and notes)
-
-%----------------------------------------------------------------------------------------
-%	HYPERLINKS
-%---------------------------------------------------------------------------------------
-
-\hypersetup{
-%draft, % Uncomment to remove all links (useful for printing in black and white)
-colorlinks=true, breaklinks=true, bookmarks=true,bookmarksnumbered,
-urlcolor=webbrown, linkcolor=RoyalBlue, citecolor=webgreen, % Link colors
-pdftitle={}, % PDF title
-pdfauthor={\textcopyright}, % PDF Author
-pdfsubject={}, % PDF Subject
-pdfkeywords={}, % PDF Keywords
-pdfcreator={pdfLaTeX}, % PDF Creator
-pdfproducer={LaTeX with hyperref and ClassicThesis} % PDF producer
-}
-
-
-
-\hyphenation{Fortran hy-phen-ation} % Specify custom hyphenation points in words with dashes where you would like hyphenation to occur, or alternatively, don't put any dashes in a word to stop hyphenation altogether
-
-%----------------------------------------------------------------------------------------
-%	TITLE AND AUTHOR(S)
-%----------------------------------------------------------------------------------------
-
-\title{\normalfont\spacedallcaps{Expenditure Model Abstract}} % The article title
-
-\author{\spacedlowsmallcaps{Caleb Moses\textsuperscript{1}}} % The article author(s) - author affiliations need to be specified in the AUTHOR AFFILIATIONS block
-
-\date{\today} % An optional date to appear under the author(s)
-
-%----------------------------------------------------------------------------------------
+%% \input{arsclassica-settings}
 
 \begin{document}
 
-%----------------------------------------------------------------------------------------
-%	HEADERS
-%----------------------------------------------------------------------------------------
+\begin{titlepage}
+\pdfbookmark{Titlepage}{Titlepage}
+\changetext{}{}{}{((\paperwidth  - \textwidth) / 2) - \oddsidemargin - \hoffset - 1in}{}
+    \begin{center}
+        {\LARGE  
 
-\renewcommand{\sectionmark}[1]{\markright{\spacedlowsmallcaps{#1}}} % The header for all pages (oneside) or for even pages (twoside)
-%\renewcommand{\subsectionmark}[1]{\markright{\thesubsection~#1}} % Uncomment when using the twoside option - this modifies the header on odd pages
-\lehead{\mbox{\llap{\small\thepage\kern1em\color{halfgray} \vline}\color{halfgray}\hspace{0.5em}\rightmark\hfil}} % The header style
+        \hfill
 
-\pagestyle{scrheadings} % Enable the headers specified in this block
+        \vfill
 
-%----------------------------------------------------------------------------------------
-%	TABLE OF CONTENTS & LISTS OF FIGURES AND TABLES
-%----------------------------------------------------------------------------------------
+        {\spacedlowsmallcaps{$author$}} \\ \bigskip
 
-\maketitle % Print the title/author/date block
+        {\color{Maroon}\spacedallcaps{$title$}} 
 
-\setcounter{tocdepth}{2} % Set the depth of the table of contents to show sections and subsections only
+        }
 
-\tableofcontents % Print the table of contents
+        \vfill
 
-\listoffigures % Print the list of figures
+        
+        $if(titleimage)$
+            \includegraphics[width=0.7\textwidth]{$titleimage$} \\ \bigskip
+        $endif$
 
-\listoftables % Print the list of tables
+		$subtitle$
 
-%----------------------------------------------------------------------------------------
-%	ABSTRACT
-%----------------------------------------------------------------------------------------
+        \vfill                      
 
-\section*{Abstract} % This section will not appear in the table of contents due to the star (\section*)
+    \end{center}        
+\end{titlepage}
 
-We present a decision making model applicable to voting preferences, and government expenditure. The model includes a characterisation of the willingness for compromise.
+\pagenumbering{roman}
+\pagestyle{plain}
 
-%----------------------------------------------------------------------------------------
-%	AUTHOR AFFILIATIONS
-%----------------------------------------------------------------------------------------
+% Generates the table of contents
+$if(toc)$
+\tableofcontents
+$endif$
 
-{\let\thefootnote\relax\footnotetext{* \textit{Department of Mathematics, University of Auckland, New Zealand}}}
-
-%{\let\thefootnote\relax\footnotetext{\textsuperscript{1} \textit{Department of Chemistry, University of Examples, London, United Kingdom}}}
-
-%----------------------------------------------------------------------------------------
-
-\newpage % Start the article content on the second page, remove this if you have a longer abstract that goes onto the second page
-
-%----------------------------------------------------------------------------------------
-%	INTRODUCTION
-%----------------------------------------------------------------------------------------
-
-\section{Introduction}
-
-%A statement\footnote{Example of a footnote} requiring citation \cite{Figueredo:2009dg}.
-Consider a single voter in the process of choosing the party that will receive their vote. Lets say that in the election, there are $n$ 'issues' $I_1,I_2,\ldots,I_n$ that each voter may consider important. The issues could be anything from health to education or military, for example. The voter selects a 'profile' $(t_1,t_2,\ldots,t_n)$ such that $\sum{t_i}=1$ that represents the relative importance of each issue to them. The details of how they might select this profile will make up the content of this article.
-
-This situation can be represented using an $n$-simplex, which in the $n=3$ case looks as follows:
-
-\begin{figure}[h]
-\centering 
-\includegraphics[width=0.4\columnwidth]{Simplex} 
-\caption[A 2-simplex representing 3 issues]{A 2-simplex representing 3 issues. The point in the interior represents the profile of the voter.} % The text in the square bracket is the caption for the list of figures while the text in the curly brackets is the figure caption
-\label{fig:simplex} 
-\end{figure}
-
-The closer the point is to any single issue, the greater the preference the voter has for that issue over any of the others. Prior to the voter selecting his profile, the political parties participating in the election all select a profile of their own, and they broadcast this (as best they can) through the media. The aim of the voter is to decide which issues matter most to him, and then he simply selects the party that most closely matches his own views.
-
-Of course, the voter can only distribute a total weight of 1 between his issues of preference, so he will have to compromise if he wants to satisfy any more than one single issue. In any case, this is a pretty simple picture, so we will move on to more interesting things.
-
-So the first step to deciding who to vote for is selecting a profile. The question is, how should he do this? His profile should represent his preferences over the set of issues, and intuitively, if any one of his issues is well-satisfied then he should be willing to offer it less weight if it is possible to make another issue much better off (proportional to his sacrifice). However we go about constructing a profile for the voter, we want our decision method to satisfy this property.
-
-\section{Setting up the model with 3 issues}
-
-We will keep to the case $n=3$ for a little longer, because we can still draw useful pictures. But rather than representing the simplex in a vacuum as with Figure~\vref{fig:simplex}, we can make things a little more concrete (mathematically speaking) and work with the set:
-
-$$S_2 = \{(x_1,x_2,x_3) \colon x_1+x_2+x_3 = 1, \textrm{for } x_1,x_2,x_3 \geq 0\}.$$
-
-This is the graph of the 2-simplex in $\R^3$, and is depicted in Figure~\vref{fig:simplex1}.
-
-\begin{figure}[h]
-\centering 
-\includegraphics[width=0.5\columnwidth]{Simplex1} 
-\caption[The 2-simplex in $\R^3$]{The 2-simplex in $\R^3$} % The text in the square bracket is the caption for the list of figures while the text in the curly brackets is the figure caption
-\label{fig:simplex1} 
-\end{figure}
-
-This is the basic picture, and is not very useful just yet. To make it more interesting, suppose that the voter assigns weights $c_1,c_2,\ldots,c_n$ to the issues $I_1,I_2,\ldots,I_n$, where $c_i\geq 0$ for all $i$, and if we like we can choose them so $\sum c_i = 1$ (it is not clear at this point if this makes much of a difference, but we might as well, since it at least precludes the case $c_i = 0$ for all $i$). Of course, if $c_i = 0$ for any $i$, then the voter is saying that he has no interest in issue $I_i$ whatsoever. And if $c_i < c_j$ for any $i\neq j$, then the voter strictly prefers $I_i$ over $I_j$. If however $c_i = c_j$ then they are indifferent between $I_i$ and $I_j$.
-
-Lets say the vector $(c_1,c_2,\ldots,c_n) = V$, since it represents the preferences of the voter. Note that the profile does not itself specify the utility of the voter, it just gives a representation of what issues matter to them. Now modify the set $S_2$ in the following way, and consider instead:
-
-$$S_2(V) = \left\{(x_1,x_2,x_3) \colon \frac{x_1}{c_1} + \frac{x_2}{c_2} + \frac{x_3}{c_3} = 1, \textrm{for } x_1,x_2,x_3 \geq 0\right\}.$$
-
-Bear in mind that we are still working with only 3 issues, although the general case is directly analogous by simply adding more $x_i$s. The set $S_2(V)$ is also a simplex, but now is no longer symmetrical in general. Rather, it is skewed, with vertices corresponding to larger values of $c_i$ being stretched out towards $x_i = 1$ and so on, as in Figure~\vref{fig:simplex2}.
-
-\begin{figure}[h]
-\centering 
-\includegraphics[width=0.5\columnwidth]{Simplex2} 
-\caption[Visualising $S_2(V)$]{An example of $S_2(V)$. Here we can see $c_1<c_2<c_3$ and $c_1 = 0.23$, $c_2 = 0.31$ and $c_3 = 0.46$.} % The text in the square bracket is the caption for the list of figures while the text in the curly brackets is the figure caption
-\label{fig:simplex2} 
-\end{figure}
-
-Next, we naively define the utility function $u(x_1,x_2,x_3)$ over $S_2(V)$ as simply: $$u(x_1,x_2,x_3) = \frac{1}{2}(x_1^2 + x_2^2 + x_3^2)$$
-
-This is just half the distance squared from the origin. Next, consider the constrained optimisation problem that arises from trying to optimise $u(x_1,x_2,x_3)$ subject to the constraint that $(x_1,x_2,x_3)\in S_2(V)$. If we suppose that $c_1< c_2 < c_3$ this forces the solution to be unique, and equal to $$\argmax_{x\in S_2(V)} u(x_1,x_2,x_3) = (0,0,c_3).$$
-
-Which is obvious from Figure~\vref{fig:simplex2}. To make the result useable, you map it back into the simplex $S_2$ by dividing the coefficients by their sum, which in this case is $c_3$ and gives the result $(0,0,1)$.
-
-Of course, this result is rubbish because if the voter assigned non-zero weight to either of $I_1$ or $I_2$, in order to optimise utility he must go all in on $I_3$, and completely ignore $I_1$ and $I_2$, even though they received some weight in his assessment of the issues. In other words, he is completely unwilling to compromise on the issue he has assigned the largest weight.
-
-So how do we resolve this? Intuitively, we would like to set the problem up so that the voter will try to take into account all issues $I_j$ given weight $c_j > 0$. He is free to ignore the others.
-
-The way this is done is by adding an extra degree of freedom $p$, the compromise coefficient to form the new set:
-$$S_2(V,p) = \left\{(x_1,x_2,x_3) \colon \left(\frac{x_1}{c_1}\right)^p+ \left(\frac{x_2}{c_2}\right)^p + \left(\frac{x_3}{c_3}\right)^p = 1, x_i \geq 0\right\}.$$
-
-The first question you might ask is "what does $p$ represent in the model?" Geometrically, $p$ curves the surface of the flat simplex $S_2(V)$ away from the origin if $p$ is large enough, and towards the origin if $p$ is small enough (refer figure XXXX). The next consideration is which values of $p$ are valid, and which are not? The most obvious thing to say about this is that clearly $p > 0$, since if $p \leq 0$, $S_2(V,p)$ is no longer well defined. Also if possible, we would like to choose $p$ in such a way that the solution to the constrained optimisation problem always exists, and is unique.
-
-But we can find the possible values of p by solving the constrained optimisation problem and characterising the solutions, which we will do now.
-
-\section{Solving the Optimisation Problem}
-Here we will be solving the general case, where there are $n$ issues. To this aim, let $x = (x_1,x_2,\ldots,x_n)$. Then the utility function $u(x)$ and the constraint $g(x)$ (such that $x\in S_n(V,p)$ if and only if $g(x) = 0$) are given by:
-\begin{align*}
-u(x) = \frac{1}{2} \sum_{i=1}^n x_i^2 && g(x) = \sum_{i=1}^n \left(\frac{x_i}{c_i}\right)^p - 1.
-\end{align*}
-Which gives rise to the Lagrangian:
-$$L(x,\lambda) = \sum_{i=1}^n \left[\frac{x_i^2}{2} - \lambda\left(\left(\frac{x_i}{c_i}\right)^p - 1\right)\right]$$
-The First Order Necessary Conditions are:
-\begin{align}
-\frac{\del L(x,\lambda)}{\del x_i} &= x_i - \lambda p\frac{x_i^{p-1}}{c_i^p} = 0 & \textrm{for every $i=1,2,\ldots,n$} \\ g(x) &= \sum_{i=1}^n \left(\frac{x_i}{c_i}\right)^p -1 = 0
-\end{align}
-Now we solve (1) and (2), and let the solution be $x^\ast$.
-\begin{align*}
-\frac{\del L(x^\ast,\lambda)}{\del x_i^\ast} &= x_i^\ast - \lambda p\frac{{x_i^\ast}^{p-1}}{c_i^p} = 0 \\
-&= x_i^\ast \cdot \left( 1 - \lambda p \frac{{x_i^\ast}^{p-2}}{c_i^p}\right) = 0
-\end{align*}
-Then $x_i^\ast = 0$, or else we have $\displaystyle \lambda p \frac{{x_i^\ast}^{p-2}}{c_i^p} = 1$ which gives $\displaystyle x_i^\ast = \left( \frac{c_i^p}{\lambda p} \right)^\frac{1}{p-2}$.
-
-Next, substituting the expression for $x_i^\ast$ into $g(x^\ast) = 0$ and rearranging gives:
-\begin{align*}
-%\sum_{i=1}^n \frac{1}{c_i^p} \left( \frac{c_i^p}{\lambda p}\right)^\frac{p}{p-2} &= 1 \\
-%\frac{1}{\lambda^\frac{p}{p-2}} \sum_{i=1}^n \left(\frac{c_i^p}{c_i^{p-2} p}\right)^\frac{p}{p-2} &= 1 \\
-%\sum_{i=1}^n \left(\frac{c_i^2}{p}\right)^\frac{p}{p-2} &= \lambda^\frac{p}{p-2} \\
-\lambda &= \left(\sum_{i=1}^n \left(\frac{c_i^2}{p}\right)^\frac{p}{p-2}\right)^\frac{p-2}{p}.
-\end{align*}
-Again, intuition suggests that if we take $c_i\to 0$, then we should have $x_i^\ast \to 0$, since if the voter offers issue $I_i$ zero weight, then the maximum utility allocation should assign zero weight to issue $I_i$ as well. We will choose $p$ so that this is the case.
-$$\lim_{c_i \searrow 0} x_i^\ast = \lim_{c_i \searrow 0} \left(\frac{c_i^p}{\lambda p}\right)^{\frac{1}{p-2}}$$
-At this point, we have to break the proof into cases because the value of the limit will depend on whether or not $p-2 > 0$. So, to start off lets suppose that $p > 2$. Furthermore, $\lambda$ depends on $c_i$, so we have to be a little careful. Define
-$$\mu_i = \left[ \sum_{j\neq i} \left(\frac{c_j^2}{p}\right)^\frac{p}{p-2}\right]^\frac{p-2}{p}$$
-Since $\mu$ not depend on $c_i$, and $\mu_i \leq \lambda$ we can use $\frac{1}{\mu_i}$ to estimate $\frac{1}{\lambda}$ from above in the following argument:
-$$\lim_{c_i \searrow 0} x_i^\ast = \lim_{c_i \searrow 0} \left(\frac{c_i^p}{\lambda p}\right)^{\frac{1}{p-2}} \leq \lim_{c_i \searrow 0} \left(\frac{c_i^p}{\mu p}\right)^{\frac{1}{p-2}} = \left(\frac{1}{\mu p}\right)^\frac{1}{p-2}\lim_{c_i \searrow 0} c_i^{\frac{p}{p-2}} = 0$$
-Where the final equality follows from the fact that since $p > 2$, $\frac{p}{p-2}>0$ also. Since $x_i^\ast \geq 0$, this proves that $\lim_{c_i \searrow 0} x_i^\ast = 0$ by the Squeeze Theorem. \\
-
-Now consider instead, the case where $0<p<2$. Then we need to solve:
-$$\lim_{c_i \searrow 0} x_i^\ast = \left[ \frac{c_i^p}{\left( \left(\frac{c_i^p}{p}\right)^\frac{1}{p-2} + \sum_{j\neq i}\left( \frac{c_j^p}{p}\right)^\frac{1}{p-2}\right) p} \right]^\frac{1}{p-2}$$
-After some rearranging, using the fact that $0<p<2$, applying continuity and renaming variables, one can show that if
-$$\lim_{c_i \searrow 0} \frac{c_i^\frac{p^2}{p-2}}{c_i^\frac{2p}{p-2} + M} = 0$$
-where $M > 0$, then $\lim_{c_i \searrow 0} x_i^\ast = \infty$. Dividing top and bottom by $c_i^\frac{p^2}{2-p}$ gives:
-$$\lim_{c_i \searrow 0} \frac{c_i^\frac{p^2}{p-2}}{c_i^\frac{2p}{p-2} + M}  = \lim_{c_i \searrow 0} \frac{1}{c_i^{-p} + M c_i^\frac{p^2}{2-p}} = 0$$
-Since when $0 < p < 2$, we have $\frac{p^2}{2-p} > 0$, so $c_i^\frac{p^2}{2-p} \rightarrow 0$ and $c_i^{-p} \rightarrow \infty$ as $c_i \searrow 0$. So from now on, we will work only with $p\in(2,\infty)$.
-
-\section{Some intuitive identities proved}
-
-Another thing that we would expect, is that as $p \rightarrow \infty$ we should have $x_i \rightarrow c_i$ for every $i = 1,\ldots,n$. Why is this? Interpreting $p$ as a measure of compromise, we should see that as $p \rightarrow \infty$ then the voter will become more and more compromising, and by extension they will become more indifferent between the options they are offered. This has the upshot that in the limit, they will prefer the most balanced option.
-
-%----------------------------------------------------------------------------------------
-%	BIBLIOGRAPHY
-%----------------------------------------------------------------------------------------
-
-\renewcommand{\refname}{\spacedlowsmallcaps{References}} % For modifying the bibliography heading
-
-\bibliographystyle{unsrt}
-
-\bibliography{sample.bib} % The file containing the bibliography
-
-%----------------------------------------------------------------------------------------
+$body$
 
 \end{document}
