@@ -10,6 +10,8 @@ GIT_TAG ?= $(shell git log --oneline | head -n1 | awk '{print $$1}')
 
 .PHONY: data docker docker-push docker-pull enter enter-root
 
+notebooks: $(shell ls -d analysis/*.Rmd | sed 's/.Rmd/.pdf/g')
+
 data: data/prison_pop_tidy.csv
 
 data/prison_pop_tidy.csv: scripts/prepare_data.R data/annual-sentenced-prisoner-population.csv
@@ -17,8 +19,6 @@ data/prison_pop_tidy.csv: scripts/prepare_data.R data/annual-sentenced-prisoner-
 
 data/annual-sentenced-prisoner-population.csv: data/annual-sentenced-prisoner-population.zip
 	unzip -o $< -d $(dir $@) && touch $@
-
-notebooks: $(shell ls -d analysis/*.Rmd | sed 's/.Rmd/.pdf/g')
 
 analysis/%.pdf: analysis/%.Rmd
 	$(RUN) Rscript -e 'rmarkdown::render("$<")'
