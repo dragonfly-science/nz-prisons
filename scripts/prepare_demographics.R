@@ -27,7 +27,7 @@ ethnicity_bins <- c(
     Other = "Other ethnicity"
 )
 
-demographics <- fread(here("data/raw/demographics.csv")) %>%
+demographics <- fread(here("data/interim/demographics.csv")) %>%
     as_tibble() %>%
     mutate(Value = if_else(Flags != "", 0, Value)) %>%
     select(-Flags, -Area) %>%

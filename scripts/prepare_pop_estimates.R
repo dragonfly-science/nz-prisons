@@ -27,7 +27,7 @@ ethnicity_bins <- c(
     Other = "Middle Eastern/Latin American/African"
 )
 
-pop_estimates <- fread(here("data/raw/pop_estimates.csv")) %>%
+pop_estimates <- fread(here("data/interim/pop_estimates.csv")) %>%
     as_tibble() %>%
     rename(`Age group` = Age) %>%
     mutate_if(is.character, as.factor) %>%
