@@ -256,3 +256,40 @@ severity_data %>%
     ylab("Annual Sentenced Prisoner Population")
 
 ```
+
+```{r}
+
+prison_pop %>%
+    select(Year, Sex, Age, Ethnicity, Population_Count, Estimated_Count) %>%
+    filter(!is.na(Population_Count) & !is.na(Estimated_Count)) %>%
+    distinct()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

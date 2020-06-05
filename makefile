@@ -26,6 +26,7 @@ data/interim/%.csv: data/raw/%.zip
 analysis/%.pdf: analysis/%.Rmd
 	$(RUN) Rscript -e 'rmarkdown::render("$<")'
 
+
 daemon: DOCKER_ARGS= -dit --rm -e DISPLAY=$$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro --name="rdev"
 daemon:
 	$(RUN) R

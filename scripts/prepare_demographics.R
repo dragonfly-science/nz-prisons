@@ -2,6 +2,8 @@ library(tidyverse)
 library(data.table)
 library(here)
 
+source(here("scripts/utils.R"), local = TRUE)
+
 prison_pop <- read_csv("data/processed/prison_pop.csv")
 
 age_bins <- c(
@@ -31,13 +33,17 @@ demographics <- fread(here("data/interim/demographics.csv")) %>%
     as_tibble() %>%
     mutate(Value = if_else(Flags != "", 0, Value)) %>%
     select(-Flags, -Area) %>%
-    mutate(Ethnicity = fct_recode(`Ethnic group`, !!!ethnicity_bins)) %>%
-    mutate(Age = fct_recode(`Age group`, !!!age_bins)) %>%
-    select(Age, Sex, Ethnicity, Year, Value) %>%
+    mutate(Ethnicity = fct_recode(`Ethnic group`, !!!ethnicity_bins),
+           Age = fct_recode(`Age group`, !!!age_bins)) %>%
     filter(Age %in% unique(prison_pop$Age),
            Sex %in% unique(prison_pop$Sex),
            Ethnicity %in% unique(prison_pop$Ethnicity)) %>%
-    rename(Population_Count = Value) %>%
-    distinct()
+    group_by(Year, Sex, Ethnicity, Age) %>%
+    summarise(Population_Count = sum(Value)) %>%
+    ungroup() %>%
+    select(Year, Sex, Ethnicity, Age, Population_Count) %>%
+    mutate(Ethnicity = factor(Ethnicity, levels = fix_factor_levels(Ethnicity)),
+           Age = factor(Age, levels = fix_factor_levels(Age))) %>%
+    arrange(Year, Sex, Ethnicity, Age)
 
 write_csv(demographics, here("data/processed/demographics.csv"))
