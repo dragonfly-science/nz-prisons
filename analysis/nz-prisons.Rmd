@@ -158,7 +158,7 @@ prison_pop %>%
                Variable == "Year" ~ sprintf("%d-%d", min(prison_pop$Year), max(prison_pop$Year)),
                Variable == "Prisoner Count" ~ "Count of prisoners, randomly rounded to base 3",
                Variable == "Population Count" ~ "Population counts, randomly rounded to base 3",
-               Variable == "Estimated Count" ~ "Estimated New Zealand resident population"
+               Variable == "Estimated Count" ~ "Estimated New Zealand resident population",
                TRUE ~ Values)) %>%
     mutate(Values = linebreak(Values)) %>%
     rename(`Variable name` = Variable, `List of values` = Values) %>%
