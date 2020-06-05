@@ -5,7 +5,7 @@ set -ex
 make data
 tree data
 
-# make notebooks
+make notebooks
 
-# cp analysis/*.pdf /output
-# cp analysis/*.pdf /publish
+cp analysis/*.pdf /output
+cp analysis/*.pdf /publish
