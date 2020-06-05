@@ -39,13 +39,26 @@ library(brms)
 library(here)
 library(gt)
 
+show_priors = FALSE
+
 # Set multicore
-options(mc.cores = min(parallel::detectCores() - 1, 10))
+options(mc.cores = min(parallel::detectCores() - 1, 10),
+        future = FALSE)
 
 plan(multiprocess)
 
 # Set default ggplot theme
-theme_set(theme_minimal())
+relative_font_size = 0.8
+theme_set(
+    theme_minimal() +
+    theme(axis.text.x=element_text(size=rel(relative_font_size)),
+          axis.text.y=element_text(size=rel(relative_font_size)),
+          axis.title.x=element_text(size=rel(relative_font_size)),
+          axis.title.y=element_text(size=rel(relative_font_size)),
+          legend.text=element_text(size=rel(relative_font_size)),
+          legend.title=element_text(size=rel(relative_font_size)),
+          legend.position="bottom")
+)
 
 # Avoid recompilation of unchanged models
 rstan_options(auto_write = TRUE)
@@ -82,12 +95,31 @@ duration_levels <- c(
     "Life imprisonment",
     "Unknown")
 
-prison_pop <- read_csv(here('data/prison_pop_tidy.csv')) %>%
+prison_pop <- read_csv(here('data/processed/prison_pop.csv')) %>%
+    left_join(read_csv(here('data/processed/demographics.csv'))) %>%
+    left_join(read_csv(here('data/processed/pop_estimates.csv'))) %>%
     mutate_if(is.character, factor) %>%
     mutate_if(is.numeric, as.integer) %>%
     mutate_if(is.factor, function(x) factor(x, levels = fix_factor_levels(x))) %>%
     mutate(Age = as.ordered(Age),
-           Duration = ordered(Duration, levels = duration_levels))
+           Duration = ordered(Duration, levels = duration_levels)) %>%
+    select(Year, Sex, Age, Ethnicity, Offence, Duration, Prisoner_Count,
+           Population_Count, Estimated_Count, Sex_Total, Age_Total,
+           Ethnicity_Total, Offence_Total, Duration_Total) %>%
+    arrange(Year, Sex, Age, Ethnicity, Offence, Duration) %>%
+    distinct()
+
+prison_pop %>%
+    group_by(Year, Sex, Age, Ethnicity, Offence, Duration) %>%
+    count() %>%
+    .$n %>%
+    unique()
+
+prison_pop %>%
+    mutate(Population_Count = case_when(
+               is.na(Population_Count) ~ Estimated_Count,
+               TRUE ~ Population_Count)) %>%
+    View()
 
 ```
 
@@ -103,13 +135,22 @@ The data is provided as randomly rounded counts^["Privacy, security, and confide
 - Ethnicity
 - Offence
 - Duration
-- Count
+- Sentenced prisoner count
+- Population count
 
 A list of the possible values for each variable is provided in table \@ref(tab:varsummary).
 
+Source Tables:
+
+- Annual Sentenced Prisoner Population for the latest Calendar Years (ANZSOC)
+
+- Estimated resident population (ERP), national population by ethnic group, age, and sex, 30 June 1996, 2001, 2006, and 2013
+
+- Age and sex by ethnic group (grouped total responses), for census night population counts, 2006, 2013, and 2018 Censuses (RC, TA, SA2, DHB)
+
 ```{r varsummary}
 
-prison_vars <- c("Year", "Sex", "Age", "Ethnicity", "Offence", "Duration", "Count")
+prison_vars <- c("Year", "Sex", "Age", "Ethnicity", "Offence", "Duration", "Prisoner_Count", "Population_Count")
 
 prison_pop %>%
     select(-ends_with("Total")) %>%
@@ -120,12 +161,15 @@ prison_pop %>%
     mutate(Variable = prison_vars) %>%
     unnest(cols = Values, keep_empty = TRUE) %>%
     mutate(Variable = factor(Variable, levels = unique(Variable))) %>%
-    mutate(Values = str_wrap(Values, width = 60)) %>%
+    mutate(Variable = factor(str_replace_all(Variable, "_", " "),
+                             levels = str_replace_all(prison_vars, "_", " ")),
+           Values = factor(str_wrap(Values, width = 60))) %>%
     group_by(Variable) %>%
     summarise(Values = paste0(Values, collapse = "\n")) %>%
     mutate(Values = case_when(
                Variable == "Year" ~ sprintf("%d-%d", min(prison_pop$Year), max(prison_pop$Year)),
-               Variable == "Count" ~ "Population counts, randomly rounded to base 3",
+               Variable == "Prisoner Count" ~ "Count of prisoners, randomly rounded to base 3",
+               Variable == "Population Count" ~ "Population counts, randomly rounded to base 3",
                TRUE ~ Values)) %>%
     mutate(Values = linebreak(Values)) %>%
     rename(`Variable name` = Variable, `List of values` = Values) %>%
@@ -136,32 +180,91 @@ prison_pop %>%
 
 # See the data
 
-```{r}
+\begin{landscape}
+
+```{r offences-by-ethnicity, fig.cap=sprintf("Offences by ethnicity from years %d to %d", min(prison_pop$Year), max(prison_pop$Year)), fig.height=6, fig.width=10}
 
 prison_pop %>%
-    group_by(Ethnicity, Duration) %>%
-    summarise(Count = sum(Count)) %>%
-    filter(Ethnicity != "Unknown", Duration != "Unknown") %>%
-    ggplot(aes(x = Duration, y = Count, fill = Duration)) +
-    geom_bar(stat = 'identity') +
-    facet_wrap(~Ethnicity) +
+    group_by(Year, Offence, Duration) %>%
+    summarise(Prisoner_Count = sum(Prisoner_Count)) %>%
+    ungroup() %>%
+    filter(Duration != "Unknown", Offence != "Unknown") %>%
+    mutate(Offence = str_wrap(Offence, width = 20)) %>%
+    ggplot(aes(x = Year, y = Prisoner_Count, colour = Duration)) +
+    geom_line(stat = 'identity') +
+    facet_wrap(~Offence, scales = 'free_y') +
     theme(axis.text.x=element_blank(),
           axis.ticks.x=element_blank())
 
 ```
 
+\end{landscape}
+
 # Model the data
 
-```{r zipois-model}
+```{r offence-duration-formula, fig.height=5.5}
 
-## bform <- bf(Count ~ Sex + Age + Ethnicity + Offence + Duration, decomp = 'QR')
+severity_form <- bf(Prisoner_Count ~ 1 + Offence + Duration, decomp = 'QR')
 
-## zipois_fit <- brm(
-##     bform, data = prison_pop,
-##     family = zero_inflated_poisson,
-##     save_model = here('models/zipois_fit.stan'),
-##     file = here('models/zipois_fit.rds')
-##     )
+severity_data <- prison_pop %>%
+    filter(Year == 2018) %>%
+    group_by(Offence, Duration) %>%
+    summarise(Prisoner_Count = sum(Prisoner_Count))
+
+if (show_priors) {
+    severity_prior <- brm(
+        severity_form, data = severity_data,
+        family = poisson,
+        prior = c(prior(normal(0, 0.9), class = Intercept),
+                  prior(normal(0, 0.6), class = b)),
+        sample_prior = "only",
+        save_model = here('models/severity_fit.stan'),
+        file = here('models/severity_prior.rds')
+        )
+
+    severity_data %>%
+        add_fitted_draws(severity_prior, value = 'Pred_Prisoner_Count') %>%
+        select(.draw, Offence, Duration, Prisoner_Count, Pred_Prisoner_Count) %>%
+        group_by(.draw, Offence) %>%
+        summarise(Prisoner_Count = sum(Prisoner_Count),
+                  Pred_Prisoner_Count = sum(Pred_Prisoner_Count)) %>%
+        mutate(Offence = str_wrap(Offence, width = 35)) %>%
+        ggplot(aes(x = reorder(Offence, Prisoner_Count))) +
+        stat_interval(aes(y = Pred_Prisoner_Count)) +
+        scale_color_brewer() +
+        geom_point(aes(y = Prisoner_Count), shape = 21, size = 1.3, fill = 'white', stroke = 1) +
+        coord_flip() +
+        xlab("Offence Type") +
+        ylab("Annual Sentenced Prisoner Population")
+}
+
+```
+
+```{r pred-offence-counts, fig.height=5.5, fig.cap="Simulated Annual Sentenced Prisoner Population counts by offence type. The white dots give the reported (actual) data, while the blue bands report 50\\%, 80\\% and 95\\% confidence intervals."}
+
+severity_fit <- brm(
+    severity_form, data = severity_data,
+    family = poisson,
+    prior = c(prior(normal(0, 0.9), class = Intercept),
+              prior(normal(0, 0.6), class = b)),
+    save_model = here('models/severity_fit.stan'),
+    file = here('models/severity_fit.rds')
+    )
+
+severity_data %>%
+    add_fitted_draws(severity_fit, value = 'Pred_Prisoner_Count') %>%
+    select(.draw, Offence, Duration, Prisoner_Count, Pred_Prisoner_Count) %>%
+    group_by(.draw, Offence) %>%
+    summarise(Prisoner_Count = sum(Prisoner_Count),
+              Pred_Prisoner_Count = sum(Pred_Prisoner_Count)) %>%
+    mutate(Offence = str_wrap(Offence, width = 35)) %>%
+    ggplot(aes(x = reorder(Offence, Prisoner_Count))) +
+    stat_interval(aes(y = Pred_Prisoner_Count)) +
+    scale_color_brewer() +
+    geom_point(aes(y = Prisoner_Count), shape = 21, size = 1.3, fill = 'white', stroke = 1) +
+    coord_flip() +
+    xlab("Offence Type") +
+    ylab("Annual Sentenced Prisoner Population")
 
 ```
 
