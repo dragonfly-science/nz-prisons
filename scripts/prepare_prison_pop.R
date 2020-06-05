@@ -2,7 +2,7 @@ library(tidyverse)
 library(data.table)
 library(here)
 
-prison_pop <- read_csv(here('data/raw/prison_pop.csv')) %>%
+prison_pop <- read_csv(here('data/interim/prison_pop.csv')) %>%
     select(-Flags) %>%
     mutate(Year = as.integer(str_extract(Year, "[0-9]+$")),
            Value = as.integer(Value)) %>%

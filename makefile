@@ -14,13 +14,13 @@ notebooks: $(shell ls -d analysis/*.Rmd | sed 's/.Rmd/.pdf/g')
 
 data: data/processed/prison_pop.csv data/processed/demographics.csv data/processed/pop_estimates.csv
 
-data/processed/%.csv: scripts/prepare_%.R data/raw/%.csv
+data/processed/%.csv: scripts/prepare_%.R data/interim/%.csv
 	$(RUN) Rscript $<
 
-data/processed/demographics.csv: scripts/prepare_demographics.R data/raw/demographics.csv data/processed/prison_pop.csv
+data/processed/demographics.csv: scripts/prepare_demographics.R data/interim/demographics.csv data/processed/prison_pop.csv
 	$(RUN) Rscript $<
 
-data/raw/%.csv: data/raw/%.zip
+data/interim/%.csv: data/raw/%.zip
 	unzip -o $< -d $(dir $@) && touch $@
 
 analysis/%.pdf: analysis/%.Rmd

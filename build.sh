@@ -2,7 +2,7 @@
 
 set -ex
 
-make data
+make data && tree data
 
 make notebooks
 

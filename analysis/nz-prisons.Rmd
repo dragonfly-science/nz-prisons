@@ -109,18 +109,6 @@ prison_pop <- read_csv(here('data/processed/prison_pop.csv')) %>%
     arrange(Year, Sex, Age, Ethnicity, Offence, Duration) %>%
     distinct()
 
-prison_pop %>%
-    group_by(Year, Sex, Age, Ethnicity, Offence, Duration) %>%
-    count() %>%
-    .$n %>%
-    unique()
-
-prison_pop %>%
-    mutate(Population_Count = case_when(
-               is.na(Population_Count) ~ Estimated_Count,
-               TRUE ~ Population_Count)) %>%
-    View()
-
 ```
 
 # Introduction
