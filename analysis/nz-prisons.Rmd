@@ -1,4 +1,4 @@
-b---
+---
 title: "Modelling the annual sentenced prisoner population"
 subtitle: "`r format(Sys.time(), '%d %B, %Y')`"
 author: "Caleb Moses"
