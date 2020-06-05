@@ -1,4 +1,4 @@
-// generated with brms 2.12.11
+// generated with brms 2.13.0
 functions {
 
   /* zero-inflated poisson log-PDF of a single response 
@@ -120,7 +120,7 @@ model {
   // initialize linear predictor term
   vector[N] mu = Intercept + XQ * bQ;
   // priors including all constants
-  target += student_t_lpdf(Intercept | 3, -2.3, 2.5);
+  target += student_t_lpdf(Intercept | 3, 1.8, 4.6);
   target += beta_lpdf(zi | 1, 1);
   // likelihood including all constants
   if (!prior_only) {
