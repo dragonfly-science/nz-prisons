@@ -12,12 +12,15 @@ GIT_TAG ?= $(shell git log --oneline | head -n1 | awk '{print $$1}')
 
 notebooks: $(shell ls -d analysis/*.Rmd | sed 's/.Rmd/.pdf/g')
 
-data: data/prison_pop_tidy.csv
+data: data/processed/prison_pop.csv data/processed/demographics.csv data/processed/pop_estimates.csv
 
-data/prison_pop_tidy.csv: scripts/prepare_data.R data/annual-sentenced-prisoner-population.csv
+data/processed/%.csv: scripts/prepare_%.R data/raw/%.csv
 	$(RUN) Rscript $<
 
-data/annual-sentenced-prisoner-population.csv: data/annual-sentenced-prisoner-population.zip
+data/processed/demographics.csv: scripts/prepare_demographics.R data/raw/demographics.csv data/processed/prison_pop.csv
+	$(RUN) Rscript $<
+
+data/raw/%.csv: data/raw/%.zip
 	unzip -o $< -d $(dir $@) && touch $@
 
 analysis/%.pdf: analysis/%.Rmd
@@ -30,7 +33,8 @@ daemon:
 clean:
 	rm -rf analysis/*.pdf analysis/*.aux analysis/*.bcf analysis/*.knit.md \
 	analysis/*.out analysis/*.run.xml analysis/*.utf8.md analysis/*.rds analysis/*.bib \
-	analysis/*_files analysis/*.log analysis/*.lot analysis/*.toc analysis/*.lof
+	analysis/*_files analysis/*.log analysis/*.lot analysis/*.toc analysis/*.lof \
+	models/*.rds data/raw/*.csv data/processed/*.csv
 
 .PHONY: docker
 docker:

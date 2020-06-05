@@ -1,7 +1,8 @@
 library(tidyverse)
+library(data.table)
 library(here)
 
-prison_pop <- read_csv(here('data/annual-sentenced-prisoner-population.csv')) %>%
+prison_pop <- read_csv(here('data/raw/prison_pop.csv')) %>%
     select(-Flags) %>%
     mutate(Year = as.integer(str_extract(Year, "[0-9]+$")),
            Value = as.integer(Value)) %>%
@@ -25,15 +26,16 @@ add_totals <- function(margins, totals, var) {
         filter(!str_detect(!!sym(var), "Total"))
 }
 
-prison_pop_tidy <- prison_pop_margins %>%
+prison_pop <- prison_pop_margins %>%
     add_totals(prison_pop_totals, "Sex") %>%
     add_totals(prison_pop_totals, "Age") %>%
     add_totals(prison_pop_totals, "Ethnicity") %>%
     add_totals(prison_pop_totals, "Offence") %>%
     add_totals(prison_pop_totals, "Duration") %>%
+    rename(Prisoner_Count = Count) %>%
     select(Year, Sex, Age, Ethnicity, Offence, Duration,
            Sex_Total, Age_Total, Ethnicity_Total,
-           Offence_Total, Duration_Total, Count) %>%
+           Offence_Total, Duration_Total, Prisoner_Count) %>%
     mutate_if(is.factor, droplevels)
 
-write_csv(prison_pop_tidy, here("data/prison_pop_tidy.csv"))
+write_csv(prison_pop, here("data/processed/prison_pop.csv"))
