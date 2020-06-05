@@ -34,7 +34,7 @@ clean:
 	rm -rf analysis/*.pdf analysis/*.aux analysis/*.bcf analysis/*.knit.md \
 	analysis/*.out analysis/*.run.xml analysis/*.utf8.md analysis/*.rds analysis/*.bib \
 	analysis/*_files analysis/*.log analysis/*.lot analysis/*.toc analysis/*.lof \
-	models/*.rds data/raw/*.csv data/processed/*.csv
+	models/*.rds data/raw/*.csv data/interim/*.csv
 
 .PHONY: docker
 docker:
