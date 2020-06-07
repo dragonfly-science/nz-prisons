@@ -62,52 +62,43 @@ theme_set(
 
 # Avoid recompilation of unchanged models
 rstan_options(auto_write = TRUE)
-
-source(here('scripts/zero_inflated_poisson_rr3.R'), local = TRUE)
-
 ```
 
 ```{r load-data}
 
 fix_factor_levels <- function(x) {
-    levels <- levels(x)
-    res = unique(as.character(levels))
-    end = c()
-    if ("Other" %in% levels) {
-        res <- res[res != "Other"]
-        end <- c("Other")
+        levels <- levels(x)
+        res = unique(as.character(levels))
+        end = c()
+        if ("Other" %in% levels) {
+                     res <- res[res != "Other"]
+                     end <- c("Other")
+                 }
+        if ("Unknown" %in% levels) {
+                     res <- res[res != "Unknown"]
+                     end <- c(end, "Unknown")
+                 }
+        c(res, end)
     }
-    if ("Unknown" %in% levels) {
-        res <- res[res != "Unknown"]
-        end <- c(end, "Unknown")
-    }
-    c(res, end)
-}
 
 duration_levels <- c(
-    "Preventive detention",
-    "6 months or less",
-    "Over 6 months and up to 1 year",
-    "Over 1 year and up to 2 years",
-    "Over 2 years and up to 3 years",
-    "Over 3 years and up to 5 years",
-    "5 years or more",
-    "Life imprisonment",
-    "Unknown")
+         "Preventive detention",
+         "6 months or less",
+         "Over 6 months and up to 1 year",
+         "Over 1 year and up to 2 years",
+         "Over 2 years and up to 3 years",
+         "Over 3 years and up to 5 years",
+         "5 years or more",
+         "Life imprisonment"
+)
 
-prison_pop <- read_csv(here('data/processed/prison_pop.csv')) %>%
-    left_join(read_csv(here('data/processed/demographics.csv'))) %>%
-    left_join(read_csv(here('data/processed/pop_estimates.csv'))) %>%
+prison_pop <- read_csv(here("data/processed/prison_pop.csv")) %>%
     mutate_if(is.character, factor) %>%
     mutate_if(is.numeric, as.integer) %>%
-    mutate_if(is.factor, function(x) factor(x, levels = fix_factor_levels(x))) %>%
     mutate(Age = as.ordered(Age),
-           Duration = ordered(Duration, levels = duration_levels)) %>%
-    select(Year, Sex, Age, Ethnicity, Offence, Duration, Prisoner_Count,
-           Population_Count, Estimated_Count, Sex_Total, Age_Total,
-           Ethnicity_Total, Offence_Total, Duration_Total) %>%
-    arrange(Year, Sex, Age, Ethnicity, Offence, Duration) %>%
-    distinct()
+           Duration = ordered(Duration, levels = duration_levels))
+
+idi_erp <- read_csv(here("data/processed/idi_erp.csv"))
 
 ```
 
@@ -138,7 +129,7 @@ Source Tables:
 
 ```{r varsummary}
 
-prison_vars <- c("Year", "Sex", "Age", "Ethnicity", "Offence", "Duration", "Prisoner_Count", "Population_Count", "Estimated_Count")
+prison_vars <- c("Year", "Sex", "Age", "Ethnicity", "Offence", "Duration", "Prisoner_Count")
 
 prison_pop %>%
     select(-ends_with("Total")) %>%
@@ -157,8 +148,6 @@ prison_pop %>%
     mutate(Values = case_when(
                Variable == "Year" ~ sprintf("%d-%d", min(prison_pop$Year), max(prison_pop$Year)),
                Variable == "Prisoner Count" ~ "Count of prisoners, randomly rounded to base 3",
-               Variable == "Population Count" ~ "Population counts, randomly rounded to base 3",
-               Variable == "Estimated Count" ~ "Estimated New Zealand resident population",
                TRUE ~ Values)) %>%
     mutate(Values = linebreak(Values)) %>%
     rename(`Variable name` = Variable, `List of values` = Values) %>%
@@ -171,125 +160,41 @@ prison_pop %>%
 
 \begin{landscape}
 
-```{r offences-by-ethnicity, fig.cap=sprintf("Offences by ethnicity from years %d to %d", min(prison_pop$Year), max(prison_pop$Year)), fig.height=6, fig.width=10}
+```{r offences-by-ethnicity-1, fig.cap=sprintf("Offences by ethnicity from years %d to %d", min(prison_pop$Year), max(prison_pop$Year)), fig.height=6, fig.width=10}
 
-prison_pop %>%
+plot_splits <- prison_pop %>%
     group_by(Year, Offence, Duration) %>%
     summarise(Prisoner_Count = sum(Prisoner_Count)) %>%
     ungroup() %>%
     filter(Duration != "Unknown", Offence != "Unknown") %>%
-    mutate(Offence = str_wrap(Offence, width = 20)) %>%
-    ggplot(aes(x = Year, y = Prisoner_Count, colour = Duration)) +
+    mutate(levels = str_wrap(Duration, width = 15),
+           Offence = factor(str_wrap(Offence, width = 30),
+                            levels = str_wrap(levels(Offence), width = 30)),
+           Duration = factor(str_wrap(Duration, width = 15),
+                             levels = str_wrap(levels(Duration), width = 15))) %>%
+    mutate(part = as.integer(Offence) > length(levels(Offence)) / 2) %>%
+    group_split(part)
+
+plot_splits[[1]] %>%
+    ggplot(aes(x = Year, y = Prisoner_Count, colour = Offence)) +
     geom_line(stat = 'identity') +
-    facet_wrap(~Offence, scales = 'free_y') +
-    theme(axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())
+    facet_grid(Offence~Duration, scales = 'free_y') +
+    theme(strip.text.y = element_blank())
 
 ```
 
 \end{landscape}
 
-# Model the data
+\begin{landscape}
 
-```{r offence-duration-formula, fig.height=5.5}
+```{r offences-by-ethnicity-2, fig.cap=sprintf("Offences by ethnicity from years %d to %d", min(prison_pop$Year), max(prison_pop$Year)), fig.height=6, fig.width=10}
 
-severity_form <- bf(Prisoner_Count ~ 1 + Offence + Duration, decomp = 'QR')
-
-severity_data <- prison_pop %>%
-    filter(Year == 2018) %>%
-    group_by(Offence, Duration) %>%
-    summarise(Prisoner_Count = sum(Prisoner_Count))
-
-if (show_priors) {
-    severity_prior <- brm(
-        severity_form, data = severity_data,
-        family = poisson,
-        prior = c(prior(normal(0, 0.9), class = Intercept),
-                  prior(normal(0, 0.6), class = b)),
-        sample_prior = "only",
-        save_model = here('models/severity_fit.stan'),
-        file = here('models/severity_prior.rds')
-        )
-
-    severity_data %>%
-        add_fitted_draws(severity_prior, value = 'Pred_Prisoner_Count') %>%
-        select(.draw, Offence, Duration, Prisoner_Count, Pred_Prisoner_Count) %>%
-        group_by(.draw, Offence) %>%
-        summarise(Prisoner_Count = sum(Prisoner_Count),
-                  Pred_Prisoner_Count = sum(Pred_Prisoner_Count)) %>%
-        mutate(Offence = str_wrap(Offence, width = 35)) %>%
-        ggplot(aes(x = reorder(Offence, Prisoner_Count))) +
-        stat_interval(aes(y = Pred_Prisoner_Count)) +
-        scale_color_brewer() +
-        geom_point(aes(y = Prisoner_Count), shape = 21, size = 1.3, fill = 'white', stroke = 1) +
-        coord_flip() +
-        xlab("Offence Type") +
-        ylab("Annual Sentenced Prisoner Population")
-}
+plot_splits[[2]] %>%
+    ggplot(aes(x = Year, y = Prisoner_Count, colour = Offence)) +
+    geom_line(stat = 'identity') +
+    facet_grid(Offence~Duration, scales = 'free_y') +
+    theme(strip.text.y = element_blank())
 
 ```
 
-```{r pred-offence-counts, fig.height=5.5, fig.cap="Simulated Annual Sentenced Prisoner Population counts by offence type. The white dots give the reported (actual) data, while the blue bands report 50\\%, 80\\% and 95\\% confidence intervals."}
-
-severity_fit <- brm(
-    severity_form, data = severity_data,
-    family = poisson,
-    prior = c(prior(normal(0, 0.9), class = Intercept),
-              prior(normal(0, 0.6), class = b)),
-    save_model = here('models/severity_fit.stan'),
-    file = here('models/severity_fit.rds')
-    )
-
-severity_data %>%
-    add_fitted_draws(severity_fit, value = 'Pred_Prisoner_Count') %>%
-    select(.draw, Offence, Duration, Prisoner_Count, Pred_Prisoner_Count) %>%
-    group_by(.draw, Offence) %>%
-    summarise(Prisoner_Count = sum(Prisoner_Count),
-              Pred_Prisoner_Count = sum(Pred_Prisoner_Count)) %>%
-    mutate(Offence = str_wrap(Offence, width = 35)) %>%
-    ggplot(aes(x = reorder(Offence, Prisoner_Count))) +
-    stat_interval(aes(y = Pred_Prisoner_Count)) +
-    scale_color_brewer() +
-    geom_point(aes(y = Prisoner_Count), shape = 21, size = 1.3, fill = 'white', stroke = 1) +
-    coord_flip() +
-    xlab("Offence Type") +
-    ylab("Annual Sentenced Prisoner Population")
-
-```
-
-```{r}
-
-prison_pop %>%
-    select(Year, Sex, Age, Ethnicity, Population_Count, Estimated_Count) %>%
-    filter(!is.na(Population_Count) & !is.na(Estimated_Count)) %>%
-    distinct()
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+\end{landscape}
